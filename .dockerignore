@@ -1,0 +1,10 @@
+node_modules
+.git
+.manus-webdev
+.manus
+.env
+.env.*
+!.env.example
+.cache
+dist
+*.log
