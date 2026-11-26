@@ -21,7 +21,8 @@ check('HEALTH_READY', { ready: true, bootId: health.data.bootId });
 const first = await request('/api/session'); const second = await request('/api/session');
 assert.equal(first.status, 200); assert.equal(second.status, 200);
 const token = first.data.token; const other = second.data.token; assert.notEqual(token, other);
-const input = { prompt: '在线验收示例：可新增任务并保存的项目待办看板', mode: 'example', requestId: randomUUID() };
+const mode = process.argv.includes('--ai') ? 'ai' : 'example';
+const input = { prompt: '在线验收：做一个中文项目待办看板，可以新增任务、勾选完成、删除，显示完成数量，修改后自动保存，重新打开恢复。', mode, requestId: randomUUID() };
 const started = await request('/api/generations', { token, method: 'POST', body: input }); assert.equal(started.status, 202);
 const same = await request('/api/generations', { token, method: 'POST', body: input });
 assert.equal(same.status, 200); assert.deepEqual(same.data, started.data);
@@ -32,8 +33,9 @@ for (let attempt = 0; attempt < 40; attempt++) {
   if (['succeeded', 'failed', 'interrupted'].includes(run.status)) break;
   await new Promise(resolve => setTimeout(resolve, 1500));
 }
-assert.equal(run.status, 'succeeded', 'Example generation must succeed');
-check('EXAMPLE_RUN_SAVED', { status: run.status, stages: run.events.map(event => event.stage), model: run.model });
+assert.equal(run.status, 'succeeded', 'Generation must succeed');
+if (mode === 'ai') assert.ok(run.model);
+check(mode === 'ai' ? 'AI_RUN_SAVED' : 'EXAMPLE_RUN_SAVED', { status: run.status, stages: run.events.map(event => event.stage), model: run.model });
 const detail = await request('/api/projects/' + started.data.projectId, { token }); assert.equal(detail.status, 200);
 assert.ok(detail.data.html.includes('atoms.saveState')); const artifactId = detail.data.artifactId;
 const forbidden = await request('/api/projects/' + started.data.projectId, { token: other }); assert.equal(forbidden.status, 404);

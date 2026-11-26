@@ -95,7 +95,7 @@ export default function App() {
             const detail = await api.project(selectedId, controller.signal);
             if (!alive) return;
             setProject(detail);
-            setPrompt(detail.prompt);
+            setPrompt(detail.activeRun?.prompt ?? detail.prompt);
             setRunMode(detail.activeRun?.mode ?? detail.mode);
             setSubmittedPrompt(detail.activeRun?.prompt ?? '');
             setActiveRunId(detail.activeRun?.id ?? null);
@@ -207,7 +207,7 @@ export default function App() {
       if (sequence !== restoreSequence.current) return;
       setProject(detail);
       updateProjectUrl(detail.id);
-      setPrompt(detail.prompt);
+      setPrompt(detail.activeRun?.prompt ?? detail.prompt);
       setRun(null);
       setFailedStart(null);
       setRunMode(detail.activeRun?.mode ?? detail.mode);
