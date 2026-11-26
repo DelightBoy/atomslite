@@ -49,8 +49,8 @@ test('output caps use family-appropriate parameter without guessed model IDs', (
 });
 
 test('provider uses explicit model, strips fences, records usage, and rejects body.error', async () => {
-  const oldFetch = globalThis.fetch; const oldUrl = process.env.MANUS_API_URL; const oldKey = process.env.MANUS_API_KEY;
-  process.env.MANUS_API_URL = 'https://provider.example/v1'; process.env.MANUS_API_KEY = 'unit-test-not-a-real-key';
+  const oldFetch = globalThis.fetch; const oldUrl = process.env.BUILT_IN_FORGE_API_URL; const oldKey = process.env.BUILT_IN_FORGE_API_KEY;
+  process.env.BUILT_IN_FORGE_API_URL = 'https://provider.example/v1'; process.env.BUILT_IN_FORGE_API_KEY = 'unit-test-not-a-real-key';
   try {
     globalThis.fetch = async (url, init) => {
       assert.equal(String(url), 'https://provider.example/v1/chat/completions');
@@ -63,8 +63,8 @@ test('provider uses explicit model, strips fences, records usage, and rejects bo
     await assert.rejects(complete('catalog-coder', 'test', new AbortController().signal), (error: unknown) => error instanceof ProviderError && !error.message.includes('secret'));
   } finally {
     globalThis.fetch = oldFetch;
-    if (oldUrl === undefined) delete process.env.MANUS_API_URL; else process.env.MANUS_API_URL = oldUrl;
-    if (oldKey === undefined) delete process.env.MANUS_API_KEY; else process.env.MANUS_API_KEY = oldKey;
+    if (oldUrl === undefined) delete process.env.BUILT_IN_FORGE_API_URL; else process.env.BUILT_IN_FORGE_API_URL = oldUrl;
+    if (oldKey === undefined) delete process.env.BUILT_IN_FORGE_API_KEY; else process.env.BUILT_IN_FORGE_API_KEY = oldKey;
   }
 });
 

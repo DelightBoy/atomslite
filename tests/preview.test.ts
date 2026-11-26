@@ -33,7 +33,7 @@ test('预览策略在所有生成代码之前生效，通信不包含凭据', ()
   assert.ok(doc.indexOf("Object.defineProperty(window, 'atoms'") < doc.indexOf('let state ='));
   assert.ok(doc.includes('event.source !== window.parent'));
   assert.ok(doc.includes("connect-src 'none'"));
-  assert.ok(!doc.includes('MANUS_API_KEY'));
+  assert.ok(!doc.includes('BUILT_IN_FORGE_API_KEY'));
 });
 
 test('导出嵌入状态不会关闭SDK脚本，不携带宿主通信和Key', () => {
@@ -43,7 +43,7 @@ test('导出嵌入状态不会关闭SDK脚本，不携带宿主通信和Key', ()
   assert.equal($('script').length, 2);
   assert.ok(doc.includes('\\u003c/script>'));
   assert.ok(!doc.includes('window.parent.postMessage'));
-  assert.ok(!doc.includes('MANUS_API_KEY'));
+  assert.ok(!doc.includes('BUILT_IN_FORGE_API_KEY'));
 });
 
 

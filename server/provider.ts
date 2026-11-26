@@ -3,8 +3,8 @@ import { tokenCap, type ModelInfo } from './model-selection';
 import type { Usage } from './db';
 
 export function providerConfig(): { baseUrl: string; key: string } | null {
-  const rawUrl = process.env.MANUS_API_URL ?? process.env.BUILT_IN_FORGE_API_URL;
-  const key = process.env.MANUS_API_KEY ?? process.env.BUILT_IN_FORGE_API_KEY;
+  const rawUrl = process.env.BUILT_IN_FORGE_API_URL;
+  const key = process.env.BUILT_IN_FORGE_API_KEY;
   if (!rawUrl || !key) return null;
   try {
     const url = new URL(rawUrl);
