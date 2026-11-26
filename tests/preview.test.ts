@@ -45,3 +45,24 @@ test('导出嵌入状态不会关闭SDK脚本，不携带宿主通信和Key', ()
   assert.ok(!doc.includes('window.parent.postMessage'));
   assert.ok(!doc.includes('MANUS_API_KEY'));
 });
+
+
+test('独立导出使用项目标识隔离存储，不依赖尚未解析的标题', async () => {
+  const { runInNewContext } = await import('node:vm');
+  const storage = new Map<string, string>();
+  const localStorage = { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value) };
+  const create = (id: string, initial: Record<string, unknown>) => {
+    const html = '<!doctype html><html><head><title>相同标题</title></head><body></body></html>';
+    const sdk = load(buildExportDocument(html, initial, id))('head script').first().html()!;
+    const window: { atoms?: { loadState(): Promise<Record<string, unknown>>; saveState(data: Record<string, unknown>): Promise<unknown> } } = {};
+    runInNewContext(sdk, { window, document: { title: '' }, localStorage });
+    return window.atoms!;
+  };
+  const first = create('project-a', { value: 'A' });
+  await first.saveState({ value: 'saved-A' });
+  const second = create('project-b', { value: 'B' });
+  assert.equal((await second.loadState()).value, 'B');
+  await second.saveState({ value: 'saved-B' });
+  assert.equal((await first.loadState()).value, 'saved-A');
+  assert.deepEqual([...storage.keys()], ['atoms-export:project-a', 'atoms-export:project-b']);
+});

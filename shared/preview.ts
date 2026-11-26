@@ -51,12 +51,13 @@ export function buildPreviewDocument(html: string, channel: string, hostOrigin: 
   return injectIntoHead(html, `<meta http-equiv="Content-Security-Policy" content="${CSP}">` + inlineScript(sdk));
 }
 
-export function buildExportDocument(html: string, state: Record<string, unknown>, _title: string): string {
+export function buildExportDocument(html: string, state: Record<string, unknown>, exportId: string): string {
   // Escape less-than signs so user-controlled state cannot close the trusted script.
   const serialized = JSON.stringify(state).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+  const storageKey = JSON.stringify('atoms-export:' + exportId).replace(/</g, '\\u003c');
   const sdk = `(() => {
     const initial = ${serialized};
-    const key = 'atoms-export:' + document.title;
+    const key = ${storageKey};
     let memory = initial;
     Object.defineProperty(window,'atoms',{configurable:false,writable:false,value:Object.freeze({
       loadState: async () => { try { const value=localStorage.getItem(key); return value ? JSON.parse(value) : memory; } catch { return memory; } },

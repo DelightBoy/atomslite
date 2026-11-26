@@ -65,8 +65,9 @@ export function createApp(database: Database, executor: GenerationExecutor, boot
     res.json(await database.putState(res.locals.owner, id(req.params.artifactId), req.body.data, req.body.version));
   });
   app.get('/api/projects/:id/export', async (req, res) => {
-    const artifact = await database.exportData(res.locals.owner, id(req.params.id));
-    const html = buildExportDocument(artifact.html, artifact.state, artifact.title);
+    const projectId = id(req.params.id);
+    const artifact = await database.exportData(res.locals.owner, projectId);
+    const html = buildExportDocument(artifact.html, artifact.state, projectId);
     const filename = artifact.title.replace(/[\x00-\x1f\x7f\\/<>:"|?*]/g, '-').slice(0, 100) || 'atoms-project';
     res.setHeader('Content-Disposition', `attachment; filename="atoms-project.html"; filename*=UTF-8''${encodeURIComponent(filename + '.html').replace(/'/g, '%27')}`);
     res.type('html').send(html);

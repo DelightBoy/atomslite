@@ -144,12 +144,14 @@ export class Database {
   }
   async project(owner: string, id: string): Promise<ProjectDetail> {
     return this.access(async () => {
-      const found = await rows<ProjectRow & { html: string | null; model: string | null; data: unknown; version: number | null }>(this.pool!,
-        `SELECT p.*, a.html, a.model, s.data, s.version FROM atoms_projects p
+      const found = await rows<ProjectRow & { html: string | null; model: string | null; data: unknown; version: number | null; active_prompt: string | null; active_mode: GenerationMode | null }>(this.pool!,
+        `SELECT p.*, a.html, a.model, s.data, s.version, r.prompt AS active_prompt, r.mode AS active_mode FROM atoms_projects p
          LEFT JOIN atoms_artifacts a ON a.id=p.artifact_id AND a.owner_id=p.owner_id
+         LEFT JOIN atoms_runs r ON r.id=p.active_run_id AND r.owner_id=p.owner_id AND r.status IN ('planning','generating','validating','saving')
          LEFT JOIN atoms_states s ON s.artifact_id=a.id AND s.owner_id=p.owner_id WHERE p.id=? AND p.owner_id=?`, [id, owner]);
       const row = found[0]; if (!row) throw new HttpError(404, '项目不存在。', 'NOT_FOUND');
-      return { ...summary(row), html: row.html, model: row.model, state: { data: parseJson(row.data, {}), version: row.version ?? 0 } };
+      return { ...summary(row), html: row.html, model: row.model, state: { data: parseJson(row.data, {}), version: row.version ?? 0 },
+        activeRun: row.active_run_id && row.active_mode ? { id: row.active_run_id, prompt: row.active_prompt ?? row.prompt, mode: row.active_mode } : null };
     });
   }
   async start(owner: string, input: StartGeneration, aiConfigured: boolean, capacityAvailable: () => boolean): Promise<StartResult & { created: boolean }> {

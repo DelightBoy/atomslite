@@ -20,9 +20,18 @@ export class ApiRequestError extends Error {
   }
 }
 
+export function generationOutcomeUnknown(error: unknown): boolean {
+  if (!(error instanceof ApiRequestError)) return true;
+  if (error.code === 'AI_NOT_CONFIGURED') return false;
+  return !(error.status >= 400 && error.status < 500 && error.code);
+}
+
 export function errorMessage(error: unknown): string {
-  if (error instanceof ApiRequestError && error.status === 409) {
+  if (error instanceof ApiRequestError && error.code === 'STATE_CONFLICT') {
     return '保存发生版本冲突。请刷新预览读取最新数据，再重新操作。';
+  }
+  if (error instanceof ApiRequestError && error.code === 'PROJECT_BUSY') {
+    return '这个项目仍在生成中。请重新打开项目，恢复进度后再操作。';
   }
   if (error instanceof ApiRequestError && error.status === 401) {
     return '访客凭证已失效，请重新连接。不要清除浏览器数据，以免失去历史项目入口。';

@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { EXAMPLE_PROMPTS } from '../../shared/types';
 import type { GenerationMode, GenerationRun, ProjectDetail, ProjectSummary, SessionInfo, StartGeneration } from '../../shared/types';
-import { api, connectSession, errorMessage } from './api';
+import { api, connectSession, errorMessage, generationOutcomeUnknown } from './api';
 import type { AppConfig } from './api';
 import PreviewFrame from './PreviewFrame';
 import type { SyncStatus } from './PreviewFrame';
@@ -96,6 +96,9 @@ export default function App() {
             if (!alive) return;
             setProject(detail);
             setPrompt(detail.prompt);
+            setRunMode(detail.activeRun?.mode ?? detail.mode);
+            setSubmittedPrompt(detail.activeRun?.prompt ?? '');
+            setActiveRunId(detail.activeRun?.id ?? null);
             setMobilePanel(detail.html ? 'preview' : 'demand');
           } catch (error) {
             if (alive) setTaskError(`上次应用暂时无法恢复：${errorMessage(error)}`);
@@ -181,12 +184,13 @@ export default function App() {
       setRun(null);
       setFailedStart(null);
       setActiveRunId(accepted.runId);
+      updateProjectUrl(accepted.projectId);
       void refreshHistory();
     } catch (error) {
       setTaskError(errorMessage(error));
-      // A failed transport does not prove the backend rejected the request.
-      // Explicit retry keeps this exact request ID to avoid duplicate billing.
-      setFailedStart(body);
+      // Only uncertain acceptance must preserve the exact request ID. A known
+      // rejection (e.g. quota) leaves the prompt available for example fallback.
+      setFailedStart(generationOutcomeUnknown(error) ? body : null);
     } finally {
       requestBusy.current = false;
       setSubmitting(false);
@@ -206,7 +210,9 @@ export default function App() {
       setPrompt(detail.prompt);
       setRun(null);
       setFailedStart(null);
-      setSubmittedPrompt('');
+      setRunMode(detail.activeRun?.mode ?? detail.mode);
+      setSubmittedPrompt(detail.activeRun?.prompt ?? '');
+      setActiveRunId(detail.activeRun?.id ?? null);
       setView('preview');
       setSync('loading');
       setRuntimeError(null);

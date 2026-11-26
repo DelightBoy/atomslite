@@ -13,6 +13,7 @@ export interface ProjectDetail extends ProjectSummary {
   html: string | null;
   state: SavedState;
   model: string | null;
+  activeRun?: { id: string; prompt: string; mode: GenerationMode } | null;
 }
 export interface RunEvent { stage: string; message: string; at: string; }
 export interface GenerationRun {

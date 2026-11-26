@@ -1,7 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { api, ApiRequestError, connectSession, errorMessage } from '../api';
+import { api, ApiRequestError, connectSession, errorMessage, generationOutcomeUnknown } from '../api';
 import type { StartGeneration } from '../../../shared/types';
+
+test('known rejection permits fallback while uncertain acceptance preserves idempotent retry', () => {
+  assert.equal(generationOutcomeUnknown(new ApiRequestError('quota', 429, 'DAILY_LIMIT')), false);
+  assert.equal(generationOutcomeUnknown(new ApiRequestError('not configured', 503, 'AI_NOT_CONFIGURED')), false);
+  assert.equal(generationOutcomeUnknown(new ApiRequestError('network', 0)), true);
+  assert.equal(generationOutcomeUnknown(new ApiRequestError('gateway', 502)), true);
+  assert.match(errorMessage(new ApiRequestError('busy', 409, 'PROJECT_BUSY')), /仍在生成/);
+  assert.match(errorMessage(new ApiRequestError('conflict', 409, 'STATE_CONFLICT')), /版本冲突/);
+});
 
 test('front-end API keeps auth in host storage and implements the shared REST contract', async t => {
   const originalFetch = globalThis.fetch;
@@ -82,11 +91,11 @@ test('front-end API keeps auth in host storage and implements the shared REST co
   });
 
   await t.test('version conflicts and non-JSON failures never masquerade as success', async () => {
-    response = () => Response.json({ error: 'Version conflict', code: 'CONFLICT' }, { status: 409 });
+    response = () => Response.json({ error: 'Version conflict', code: 'STATE_CONFLICT' }, { status: 409 });
     await assert.rejects(api.saveState('a1', { data: {}, version: 1 }), error => {
       assert.ok(error instanceof ApiRequestError);
       assert.equal(error.status, 409);
-      assert.equal(error.code, 'CONFLICT');
+      assert.equal(error.code, 'STATE_CONFLICT');
       assert.match(errorMessage(error), /版本冲突/);
       return true;
     });
